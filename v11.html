@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Challenge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    /* Estilo do corpo */
+    body {
+      font-family: 'Press Start 2P', cursive;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+      text-align: center;
+      color: #333;
+    }
+
+    /* Fundo interativo */
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+
+    /* Tela de início */
+    #start-screen {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      z-index: 10;
+    }
+
+    #start-screen h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+    }
+
+    #start-screen p {
+      font-size: 1em;
+      max-width: 600px;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    #start-button {
+      padding: 10px 20px;
+      font-size: 1.2em;
+      color: #fff;
+      background-color: #6c5ce7;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #start-button:hover {
+      background-color: #5a4dbf;
+    }
+
+    /* Título */
+    h1 {
+      font-size: 2.5em;
+      color: #ff7f11;
+      margin: 20px 0;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Tabuleiro */
+    #board {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 10px;
+      max-width: 800px;
+      margin: 20px auto;
+      transition: all 0.3s;
+    }
+
+    .cell {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #fff;
+      font-size: 0.8em;
+      background: linear-gradient(145deg, #6c5ce7, #5a4dbf);
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      transition: background 0.3s ease-in-out;
+    }
+
+    #player {
+      background: #55efc4;
+      color: #000;
+      font-size: 0.9em;
+      font-weight: bold;
+      border: 3px solid #333;
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
+      animation: movePlayerAnimation 1s ease;
+    }
+
+    /* Animação do jogador */
+    @keyframes movePlayerAnimation {
+      0% { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
+
+    /* Perguntas */
+    #question {
+      margin: 20px auto;
+      padding: 20px;
+      background: #ffffff;
+      border-radius: 10px;
+      max-width: 600px;
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+      transition: opacity 0.5s ease;
+    }
+
+    #question-text {
+      font-size: 1em;
+      margin-bottom: 10px;
+    }
+
+    input[type="text"] {
+      width: 90%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1em;
+    }
+
+    /* Botões */
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+      cursor: pointer;
+      margin: 5px;
+      transition: background 0.3s ease;
+    }
+
+    #submit {
+      background-color: #ff7f11;
+      color: #fff;
+    }
+
+    #submit:hover {
+      background-color: #e56705;
+    }
+
+    #dice {
+      background-color: #6c5ce7;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    #dice:disabled {
+      background-color: gray;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 10px;
+      font-size: 1.1em;
+    }
+
+    /* Tela de vitória */
+    #win-screen {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      z-index: 10;
+    }
+
+    #win-screen h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <!-- Tela inicial -->
+  <div id="start-screen">
+    <h1>Bem-vindo ao Challenge!</h1>
+    <p>Avance no tabuleiro respondendo corretamente às perguntas. Cuidado: respostas erradas podem te fazer voltar! Role o dado para avançar após acertar uma pergunta. Ganhe ao chegar ao final!</p>
+    <button id="start-button">Começar</button>
+  </div>
+
+  <!-- Jogo -->
+  <h1>Challenge</h1>
+  <div id="board"></div>
+  <div id="question">
+    <p id="question-text"></p>
+    <input type="text" id="answer" placeholder="Digite sua resposta">
+    <button id="submit">Enviar</button>
+  </div>
+  <button id="dice" disabled>Girar o dado</button>
+  <p id="message"></p>
+
+  <!-- Tela de vitória -->
+  <div id="win-screen">
+    <h1>Parabéns, você venceu!</h1>
+    <p>Obrigado por jogar. Recarregue a página para jogar novamente!</p>
+  </div>
+
+   <!-- Sons -->
+  <audio id="roll-sound" src="roll.mp3"></audio>
+  <audio id="correct-sound" src="correct.mp3"></audio>
+  <audio id="incorrect-sound" src="incorrect.mp3"></audio>
+  <audio id="win-sound" src="win.mp3"></audio>
+
+  <!-- Música de fundo -->
+  <audio id="background-music" loop autoplay>
+    <source src="sua-musica.mp3" type="audio/mp3">
+    Seu navegador não suporta a reprodução de áudio.
+  </audio>
+  <script>
+    const startScreen = document.getElementById("start-screen");
+    const startButton = document.getElementById("start-button");
+    const winScreen = document.getElementById("win-screen");
+
+    startButton.addEventListener("click", () => {
+      startScreen.style.display = "none";
+    });
+
+    const rollSound = document.getElementById("roll-sound");
+    const correctSound = document.getElementById("correct-sound");
+    const incorrectSound = document.getElementById("incorrect-sound");
+    const winSound = document.getElementById("win-sound");
+
+    const boardSize = 50;
+    const questions = [
+      { question: "Como se diz 'casa' em inglês?", answer: "house" },
+      { question: "Como se diz 'gato' em inglês?", answer: "cat" },
+      { question: "Como se diz 'cachorro' em inglês?", answer: "dog" },
+      { question: "Como se diz 'livro' em inglês?", answer: "book" },
+      { question: "Como se diz 'carro' em inglês?", answer: "car" },
+      { question: "Como se diz 'escola' em inglês?", answer: "school" },
+      { question: "Como se diz 'amor' em inglês?", answer: "love" },
+      { question: "Como se diz 'feliz' em inglês?", answer: "happy" },
+      { question: "Como se diz 'novo' em inglês?", answer: "new" },
+      { question: "Como se diz 'trabalho' em inglês?", answer: "work" },
+      { question: "Como se diz 'amigo' em inglês?", answer: "friend" },
+      { question: "Como se diz 'família' em inglês?", answer: "family" },
+      { question: "Como se diz 'comida' em inglês?", answer: "food" },
+      { question: "Como se diz 'água' em inglês?", answer: "water" },
+      { question: "Como se diz 'cidade' em inglês?", answer: "city" },
+      { question: "Como se diz 'tempo' em inglês?", answer: "time" },
+      { question: "Como se diz 'céu' em inglês?", answer: "sky" },
+      { question: "Como se diz 'sol' em inglês?", answer: "sun" },
+      { question: "Como se diz 'lua' em inglês?", answer: "moon" },
+      { question: "Como se diz 'estrela' em inglês?", answer: "star" },
+      { question: "Como se diz 'café' em inglês?", answer: "coffee" },
+      { question: "Como se diz 'manhã' em inglês?", answer: "morning" },
+      { question: "Como se diz 'noite' em inglês?", answer: "night" },
+      { question: "Como se diz 'música' em inglês?", answer: "music" },
+      { question: "Como se diz 'canção' em inglês?", answer: "song" },
+      { question: "Como se diz 'viagem' em inglês?", answer: "trip" },
+      { question: "Como se diz 'feriado' em inglês?", answer: "holiday" },
+      { question: "Como se diz 'feliz aniversário' em inglês?", answer: "happy birthday" },
+      { question: "Como se diz 'obrigado' em inglês?", answer: "thank you" },
+      { question: "Como se diz 'desculpa' em inglês?", answer: "sorry" }
+    ];
+    let usedQuestions = [];
+    let playerPosition = 0;
+
+    const board = document.getElementById("board");
+    for (let i = 0; i < boardSize; i++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      cell.textContent = i + 1;
+      if (i === 0) cell.id = "player";
+      board.appendChild(cell);
+    }
+
+    const questionText = document.getElementById("question-text");
+    const answerInput = document.getElementById("answer");
+    const submitButton = document.getElementById("submit");
+    const diceButton = document.getElementById("dice");
+    const message = document.getElementById("message");
+
+    function askQuestion() {
+      if (usedQuestions.length === questions.length) {
+        message.textContent = "Todas as perguntas já foram usadas!";
+        return;
+      }
+      let newQuestion;
+      do {
+        newQuestion = questions[Math.floor(Math.random() * questions.length)];
+      } while (usedQuestions.includes(newQuestion));
+      currentQuestion = newQuestion;
+      questionText.textContent = currentQuestion.question;
+    }
+
+    let currentQuestion;
+    askQuestion();
+
+    submitButton.addEventListener("click", () => {
+      const playerAnswer = answerInput.value.trim().toLowerCase();
+      if (playerAnswer === currentQuestion.answer) {
+        correctSound.play();  // Som de resposta correta
+        message.textContent = "Resposta correta! Você pode girar o dado.";
+        usedQuestions.push(currentQuestion);
+        diceButton.disabled = false;
+        answerInput.value = "";
+        askQuestion();
+      } else {
+        incorrectSound.play();  // Som de resposta errada
+        message.textContent = "Resposta errada! Você voltou uma casa.";
+        movePlayer(-1);
+        answerInput.value = "";
+      }
+    });
+
+    diceButton.addEventListener("click", () => {
+      rollSound.play();  // Som ao girar o dado
+      const diceRoll = Math.floor(Math.random() * 6) + 1;
+      message.textContent = `Você rolou um ${diceRoll}!`;
+      movePlayer(diceRoll);
+      diceButton.disabled = true;
+    });
+
+    function movePlayer(steps) {
+      const playerCell = document.getElementById("player");
+      playerCell.removeAttribute("id");
+      playerPosition += steps;
+      if (playerPosition < 0) playerPosition = 0;
+      if (playerPosition >= boardSize) {
+        playerPosition = boardSize - 1;
+        winSound.play();  // Som de vitória
+        winScreen.style.display = "flex";
+      }
+      const newCell = board.children[playerPosition];
+      newCell.id = "player";
+    }
+  </script>
+</body>
+</html>
